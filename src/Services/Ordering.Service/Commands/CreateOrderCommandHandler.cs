@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 using Ordering.Domain.AggregateModels.BuyerAggregate;
 using Ordering.Domain.AggregateModels.OrderAggregate;
 using Ordering.Domain.Contracts;
-using Ordering.Infrastructure.Relational.Contracts;
 
 namespace Ordering.API.Commands
 {
@@ -48,9 +47,6 @@ namespace Ordering.API.Commands
                     // Here, we're on a separate thread from the main thread and DbContext
                     // reference from main has been disposed. 
                     //https://github.com/mjrousos/MultiThreadedEFCoreSam
-
-                    // Get references to write repository
-                    var writeModelOrderRepository = scope.ServiceProvider.GetRequiredService<IOrderRelationalRepository>();
 
                     // Get references to read repository
                     var readModelOrderRepository = scope.ServiceProvider.GetRequiredService<IOrderRepository>();
@@ -103,9 +99,6 @@ namespace Ordering.API.Commands
                     //*
                     //*********************************************
                     
-                    // Add Order to WriteDataStore
-                    var _orderId = await writeModelOrderRepository.Add(order);
-
                     // Add Order to ReadDataStore
                     await readModelOrderRepository.Add(order, _telemetryClient);
 

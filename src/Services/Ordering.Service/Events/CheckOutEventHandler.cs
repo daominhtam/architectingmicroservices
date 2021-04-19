@@ -8,7 +8,6 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Ordering.API.Dtos;
-using Ordering.Infrastructure.Relational.Contracts;
 
 namespace Ordering.API.Events
 {
@@ -22,8 +21,7 @@ namespace Ordering.API.Events
         public CheckOutEventHandler(IEventBusPublisher eventBusPublisher,
             CreateOrderCommandHandler orderCommandHandler,
             ILogger<CheckOutEventHandler> logger,
-            TelemetryClient telemetryClient,
-            IOrderRelationalRepository orderRepository)
+            TelemetryClient telemetryClient)
         {
             _eventBusPublisher = eventBusPublisher;
             _orderCommandHandler = orderCommandHandler;

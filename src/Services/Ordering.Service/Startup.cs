@@ -15,9 +15,6 @@ using Ordering.API.Filters;
 using Ordering.API.Queries;
 using Ordering.Domain.AggregateModels.OrderAggregate;
 using Ordering.Infrastructure.NoSql.Repositories;
-using Ordering.Infrastructure.Relational.Contracts;
-using Ordering.Infrastructure.Relational.DataStore;
-using Ordering.Infrastructure.Relational.Repository;
 
 namespace Ordering.API
 {
@@ -37,7 +34,6 @@ namespace Ordering.API
             services.RegisterTelemetryCollector(Configuration);
             services.RegisterEventBusPublisher(Configuration);
             services.RegisterEventBusSubscriber(Configuration);
-            services.RegisterRelationalDatabase(Configuration);
             services.RegisterNoSqlStore(Configuration);
 
             //// Register telemetry initializer
@@ -48,7 +44,6 @@ namespace Ordering.API
             services.AddTransient<CheckOutEventHandler>();
             services.AddTransient<IOrderQueries, OrderQueries>();
             services.AddTransient<CreateOrderCommandHandler>();
-            services.AddTransient<IOrderRelationalRepository, OrderRelationalRepository>();
 
             // Capture SQL query text in App Insights
             // https://docs.microsoft.com/en-us/azure/azure-monitor/app/asp-net-dependencies
@@ -108,13 +103,6 @@ namespace Ordering.API
             app.UseSwaggerUI(c => { c.SwaggerEndpoint("/swagger/v1/swagger.json", "Ordering Services API V1"); });
 
             app.ConfigureEventBusListeners(serviceProvider);
-
-            // Because we declare within serviceScope, we must wrap the call in a serviceScope
-            // The code block creates and populates the Product database
-            using (var serviceScope = app.ApplicationServices.CreateScope())
-            {
-                DataInitializer.InitializeDatabaseAsync(serviceScope).Wait();
-            }
         }
     }
 }

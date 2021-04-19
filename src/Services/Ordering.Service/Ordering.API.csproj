@@ -16,9 +16,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Application\**" />
     <Compile Remove="wwwroot\**" />
+    <Content Remove="Application\**" />
     <Content Remove="wwwroot\**" />
+    <EmbeddedResource Remove="Application\**" />
     <EmbeddedResource Remove="wwwroot\**" />
+    <None Remove="Application\**" />
     <None Remove="wwwroot\**" />
   </ItemGroup>
 
@@ -37,7 +41,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="3.1.5" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.1.5" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.5" />
     <PackageReference Include="Microsoft.Extensions.Configuration.AzureKeyVault" Version="3.1.1" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.0" />
@@ -55,15 +58,10 @@
     <ProjectReference Include="..\..\BuildingBlocks\Utilities\Utilities.csproj" />
     <ProjectReference Include="..\Ordering.Domain\Ordering.Domain.csproj" />
     <ProjectReference Include="..\Ordering.Infrastructure.NoSql\Ordering.Infrastructure.NoSql.csproj" />
-    <ProjectReference Include="..\Ordering.Infrastructure.Relational\Ordering.Infrastructure.Relational\Ordering.Infrastructure.Relational.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <WCFMetadata Include="Connected Services" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Application\" />
   </ItemGroup>
 
 </Project>
