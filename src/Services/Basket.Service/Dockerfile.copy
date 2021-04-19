@@ -1,0 +1,14 @@
+﻿# Pulls Dotnet Image from Docker Hub
+# Be sure to add ‘.’ at the end of the command, immediately after the nanoserver
+FROM microsoft/dotnet:2.0.0-sdk-2.0.2-nanoserver
+# Creates a Working Directory
+WORKDIR dockerdemo
+# Add all the required applications artifacts inside the container. 
+# Note the two periods that follow the Add command.
+ADD . .
+#Command to Run when container is up and running
+ENTRYPOINT ["dotnet","bin/Debug/netcoreapp2.0/publish/Basket.API.dll"]
+# Exposes the Container Port
+EXPOSE 8083
+# Sets up a Docker Network
+ENV ASPNETCORE_URLS http://0.0.0.0:8083
