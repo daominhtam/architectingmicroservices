@@ -129,7 +129,6 @@ namespace ApiGateway.API
             services.AddSingleton<LoggerFactory>();
             services.AddHttpServices<RestClient>(Configuration);
 
-
             services.AddApiVersioning(x =>
             {
                 // Allows for API to return a version in the response header

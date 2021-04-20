@@ -13,10 +13,12 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using RestCommunication;
 using ServiceDiscovery;
 
 namespace Basket.API
@@ -97,6 +99,11 @@ namespace Basket.API
 
             // Enable HTTPClient and resiliency support using 
             //services.AddHttpServices(Configuration);
+
+            // https://docs.microsoft.com/en-us/aspnet/core/fundamentals/logging/?view=aspnetcore-3.1
+            // Add instance of LoggerFactory for HttpRestClientFactory to consume
+            services.AddSingleton<LoggerFactory>();
+            services.AddHttpServices<RestClient>(Configuration);
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, IServiceProvider serviceProvider)

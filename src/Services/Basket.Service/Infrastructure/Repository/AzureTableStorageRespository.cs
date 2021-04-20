@@ -85,7 +85,8 @@ namespace Basket.API.Infrastructure.Repository
             var table = await GetTableAsync();
 
             //Operation
-            var operation = TableOperation.Insert(item);
+            //var operation = TableOperation.Insert(item);
+            var operation = TableOperation.InsertOrReplace(item);
 
             //Execute
             await table.ExecuteAsync(operation);

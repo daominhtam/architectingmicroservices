@@ -11,6 +11,8 @@ using Basket.API.Events;
 using EventBus.Bus;
 using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.Logging;
+using RestCommunication;
+using ServiceDiscovery;
 using Snowflake;
 
 namespace Basket.API.Domain.BusinessServices
@@ -27,12 +29,14 @@ namespace Basket.API.Domain.BusinessServices
         private readonly ILogger<BasketBusinessServices> _logger;
         private readonly IAzureTableStorageRespository<ProductTableEntity> _productRepository;
         private readonly TelemetryClient _telemetryClient;
+        private readonly IRestClient _restClient;
 
         public BasketBusinessServices(IDistributedCacheRepository distributedCacheRepository,
             IAzureTableStorageRespository<ProductTableEntity> productRepository,
             ILogger<BasketBusinessServices> logger,
             IEventBusPublisher eventBusPublisher,
             IEventBusSubscriber eventBusSubscriber,
+            IRestClient restClient,
             TelemetryClient telemetryClient)
         {
             _distributedCacheRepository = distributedCacheRepository;
@@ -40,6 +44,7 @@ namespace Basket.API.Domain.BusinessServices
             _logger = logger;
             _eventBusPublisher = eventBusPublisher;
             _eventBusSubscriber = eventBusSubscriber;
+            _restClient = restClient;
             _telemetryClient = telemetryClient;
             //_eventBus = eventBus;
         }
@@ -77,17 +82,36 @@ namespace Basket.API.Domain.BusinessServices
             string basketId)
         {
             //* Materialized View Pattern
-            //* Fetches productEntity data from a read-only store contained in shopping basket service.
+            //* Fetch product entity data from a read-only store contained in shopping basket service.
             //* ProductEntity ID is row key in underlying Azure table.
             //* Returns a ProductTableEntity class
             var productTableEntity = await _productRepository.GetItem(ProductPartitionKey, productId.ToString(), correlationToken);
 
             if (productTableEntity == null)
             {
-                _logger.LogWarning(
-                    $"Cannot locate productEntity information for item {productId} for Request {correlationToken}. Have you created the ProductEntity Read Model for the Shopping BasketEntity microservice?");
-                throw new Exception(
-                    $"Cannot add item to shopping basket: ProductEntity #{productId} does not exist for Request {correlationToken}.  Have you created the ProductEntity Read Model for the Shopping BasketEntity microservice?");
+                // Make direct HTTP call to retrieve product information from Catalog Service
+                var product = await _restClient.GetAsync<ProductEntity>(ServiceEnum.Catalog, $"api/Catalog/Music/{productId}", correlationToken);
+
+                if (product == null)
+                    throw new Exception(
+                        $"Cannot add item to shopping basket: ProductEntity #{productId} does not exist for Request {correlationToken}.  Have you created the ProductEntity Read Model for the Shopping BasketEntity microservice?");
+
+                productTableEntity = new ProductTableEntity
+                {
+                    PartitionKey = ProductPartitionKey,
+                    RowKey = product.Data.Id.ToString(),
+                    Title = product.Data.Title,
+                    Id = product.Data.Id,
+                    GenreName = product.Data.GenreName,
+                    ArtistName = product.Data.ArtistName,
+                    Price = product.Data.Price.ToString()
+                };
+
+                // Store product entity in the local read model 
+                await _productRepository.Insert(productTableEntity, correlationToken);
+
+                _logger.LogInformation(
+                    $"Added productEntity information for item {productId} for Request {correlationToken} to the read model.");
             }
 
             BasketEntity basket = null;
@@ -308,16 +332,6 @@ namespace Basket.API.Domain.BusinessServices
             orderInformationModel.Buyer = buyer;
             orderInformationModel.Payment = payment;
 
-            //var checkoutEvent = new CheckOutEvent
-            //{
-            //    BasketId = basketId,
-            //    // Generate system checkoutId using snowflake
-            //    CheckoutId = SnowflakeIdGenerator.GenerateId(SnowflakeEnum.Checkout),
-            //    Total = basket.Items.Sum(x => decimal.Parse(x.UnitPrice) * x.Quantity),
-            //    BuyerInformation = buyer,
-            //    PaymentInformation = payment
-            //};
-
             foreach (var item in basket.Items)
                 orderInformationModel.LineItems.Add(new OrderInformationModel.LineItem() 
                 {
@@ -334,22 +348,6 @@ namespace Basket.API.Domain.BusinessServices
                 OrderInformationModel = orderInformationModel,
                 CorrelationToken = correlationToken
             };
-
-
-            //checkoutEvent.CorrelationToken = correlationToken;
-
-            //foreach (var item in basket.Items)
-            //    checkoutEvent.LineItems.Add(new CheckOutEventLineItem
-            //    {
-            //        ProductId = item.ProductId,
-            //        Title = item.Title,
-            //        Artist = item.Artist,
-            //        Genre = item.Genre,
-            //        UnitPrice = item.UnitPrice,
-            //        Quantity = item.Quantity
-            //    });
-
-            //checkoutEvent.CorrelationToken = correlationToken;
 
             _logger.LogInformation($"Check-out operation invoked for shopping basket {basketId} for Request {correlationToken}");
 

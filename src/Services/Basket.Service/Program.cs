@@ -17,7 +17,7 @@ namespace Basket.API
             return Environment.GetEnvironmentVariable("KEYVAULT_ENDPOINT", EnvironmentVariableTarget.Machine);
         }
 
-                public static void Main(string[] args)
+        public static void Main(string[] args)
         {
             CreateHostBuilder(args).Build().Run();
         }
