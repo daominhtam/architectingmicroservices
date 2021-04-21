@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Security.Authentication;
-using Basket.API.Commands;
 using Basket.API.Contracts;
 using Basket.API.Domain.BusinessServices;
 using Basket.API.Events;
@@ -59,7 +58,6 @@ namespace Basket.API
             // Register concrete dependencies
             services.AddTransient<EmptyBasketEventHandler>();
             services.AddTransient<ProductChangedEventHandler>();
-            services.AddTransient<AddProductCommandHandler>();
             services.AddTransient<IBasketBusinessServices, BasketBusinessServices>();
             services.AddSingleton<IServiceLocator, ServiceLocator>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();

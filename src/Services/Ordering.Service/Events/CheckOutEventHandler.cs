@@ -62,12 +62,6 @@ namespace Ordering.API.Events
                 _telemetryClient.TrackEvent(
                     $"Event: CheckOutEventHandler invoked: BasketID:{checkedOutEvent.OrderInformationModel.BasketId}");
 
-                _logger.LogInformation($"{checkedOutEvent == null}");
-                _logger.LogInformation($"{checkedOutEvent.OrderInformationModel == null}");
-                _logger.LogInformation($"{checkedOutEvent.OrderInformationModel.Buyer == null}");
-                _logger.LogInformation($"{checkedOutEvent.OrderInformationModel.LineItems == null}");
-                _logger.LogInformation($"{checkedOutEvent.OrderInformationModel.Payment == null}");
-
                 var createOrderCommand = new CreateOrderCommand(
                     checkedOutEvent.OrderInformationModel.BasketId,
                     checkedOutEvent.OrderInformationModel.CheckoutId,
@@ -103,32 +97,9 @@ namespace Ordering.API.Events
 
                 checkedOutEvent.OrderInformationModel.OrderSystemId = orderId;
                 
-                //_telemetryClient.TrackEvent(
-                //    $"Event: CheckOutEventHandler: New Order created:{orderId}");
-
-                //// Invoke Command that creates buyer
-                //await _buyerCommandHandler.Handle(createBuyerCommand);
-
                 _telemetryClient.TrackEvent(
                     $"Event: CheckOutEventHandler: Buyer created:{orderId}");
                 
-                // TODO
-                // Create OrderCreatedEvent (which is really content of CheckOutEvent and any additional assignments from creating order)
-                //// Publish OrderCreatedEvent
-                ////var orderCreatedEvent = new OrderCreatedEvent
-                ////{
-                ////    OrderInformationModel = checkedOutEvent.OrderInformationModel,
-                ////    CorrelationToken = correlationToken
-                ////};
-
-                //_logger.LogInformation(
-                //    $"Publishing 'OrderCreatedEvent' from CheckOutEventHandler in Ordering.API for Request {correlationToken} ");
-
-                //_telemetryClient.TrackEvent(
-                //    $"Event: Publishing 'OrderCreatedEvent' from CheckOutEventHandler for orderid:{orderId}");
-
-                //await _eventBusPublisher.Publish<EmptyBasketEvent>(orderCreatedEvent);
-
                 //************** Publish Event  *************************
                 // Publish event to clear basket for this order from Basket service
                 var emptyCartEvent = new EmptyBasketEvent

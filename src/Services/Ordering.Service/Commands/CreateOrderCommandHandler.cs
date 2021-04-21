@@ -10,15 +10,6 @@ using Ordering.Domain.Contracts;
 
 namespace Ordering.API.Commands
 {
-    // Following a simplfied CQRS pattern, this is a command object that creates a new order
-    // DDD and CQRS patterns comment: Note that it is recommended to implement immutable Commands
-    // In this case, its immutability is achieved by having all the setters as private
-    // plus only being able to update the data just once, when creating the object through its constructor.
-    // References on Immutable Commands:  
-    // http://cqrs.nu/Faq
-    // https://docs.spine3.org/motivation/immutability.html 
-    // http://blog.gauffin.org/2012/06/griffin-container-introducing-command-support/
-    // https://docs.microsoft.com/dotnet/csharp/programming-guide/classes-and-structs/how-to-implement-a-lightweight-class-with-auto-implemented-properties
     public class CreateOrderCommandHandler
     {
         //private readonly IConfiguration _configuration;
@@ -92,13 +83,6 @@ namespace Ordering.API.Commands
                     // for the entire graph.
                     order.Buyer = buyer;
 
-                    //*********************************************
-                    //* TODO
-                    //* Implement the Outbox pattern to ensure that
-                    //* both reads and writes save in a single transaction
-                    //*
-                    //*********************************************
-                    
                     // Add Order to ReadDataStore
                     await readModelOrderRepository.Add(order, _telemetryClient);
 

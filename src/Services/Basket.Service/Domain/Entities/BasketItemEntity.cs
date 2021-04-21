@@ -12,7 +12,5 @@ namespace Basket.API.Domain.Entities
         public string Genre { get; set; }
         public string UnitPrice { get; set; }
         public int Quantity { get; set; }
-        //public bool ParentalCaution { get; set; }
-        //public DateTime DateCreated { get; set; }
     }
 }

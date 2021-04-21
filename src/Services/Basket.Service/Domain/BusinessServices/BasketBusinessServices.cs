@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using Basket.API.Commands;
 using Basket.API.Contracts;
 using Basket.API.Domain.Entities;
 using Basket.API.Dtos;
@@ -348,6 +347,7 @@ namespace Basket.API.Domain.BusinessServices
                 OrderInformationModel = orderInformationModel,
                 CorrelationToken = correlationToken
             };
+       
 
             _logger.LogInformation($"Check-out operation invoked for shopping basket {basketId} for Request {correlationToken}");
 
@@ -364,7 +364,6 @@ namespace Basket.API.Domain.BusinessServices
                 CorrelationId = correlationToken
             });
         }
-
         /// <summary>
         ///     Event handler that listens for PrdouctChanged Events from the catalog service
         ///     and synchronizes the Catalog Read Table in BasketEntity accordingly.
@@ -425,49 +424,6 @@ namespace Basket.API.Domain.BusinessServices
                     "Exception throw in ProductChanged() in BasketEntity : {message}", ex.Message);
 
                 throw new Exception($"Error in ProductChanged() in BasketEntity : {ex.Message}");
-            }
-            
-            await Task.CompletedTask;
-        }
-
-        /// <summary>
-        ///     Event handler that listens for PrdouctChanged Events from the catalog service
-        ///     and synchronizes the Catalog Read Table in BasketEntity accordingly.
-        ///     Handles both productEntity inserts and updates.
-        /// </summary>
-        /// <param name="product">ProductEntity Information</param>
-        /// <param name="correlationId">Tracks request - can be any value</param>
-        /// <returns></returns>
-        public async Task BuildReadModel(AddProductCommand product, string correlationToken)
-        {
-            //Transform to InventoryItemEntity objects
-            var productTableEntity = new ProductTableEntity
-            {
-                PartitionKey = ProductPartitionKey,
-                RowKey = product.Id.ToString(),
-                Title = product.Title,
-                ArtistName = product.ArtistName,
-                //Cutout = productEntity.Cutout,
-                GenreName = product.GenreName,
-                //ParentalCaution = productEntity.ParentalCaution,
-                Price = product.Price.ToString(),
-                //ReleaseDate = productEntity.ReleaseDate,
-                //Upc = productEntity.UPC
-            };
-
-            // Determine if record already exists
-            var currentReadTableItems =
-                await _productRepository.GetItem(ProductPartitionKey,
-                    productTableEntity.RowKey, correlationToken); if (currentReadTableItems == null)
-                // Title does not exist -- Add
-            {
-                await _productRepository.Insert(productTableEntity, correlationToken);
-
-                _logger.LogWarning($"Added productEntity {product.Title} to read model at {DateTime.UtcNow} for CorrelationToken:{correlationToken}");
-            }
-            else
-            {
-                _logger.LogWarning($"ProductEntity {product.Title} exists in read model at {DateTime.UtcNow} for CorrelationToken:{correlationToken}");
             }
             
             await Task.CompletedTask;

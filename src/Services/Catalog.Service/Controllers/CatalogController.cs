@@ -228,32 +228,5 @@ namespace Catalog.API.Controllers
 
             return NoContent();
         }
-
-        /// <summary>
-        ///     Propagates catalog read model for any service
-        /// </summary>
-        /// <returns>HTTP Status Code</returns>
-        [HttpPost("CreateBasketReadModel", Name = "CreateBasketReadModelRoute")]
-        public async Task<IActionResult> PostReadModel([FromHeader(Name = "x-correlationToken")]
-            string correlationToken)
-        {
-            Guard.ForNullOrEmpty(correlationToken, "correlationToken");
-
-            try
-            {
-                await _catalogBusinessServices.ManageReadModel(correlationToken);
-            }
-            catch (Exception ex)
-            {
-                var errorMessage =
-                    $"Exception thrown in CreateBasketReadModel: {ex.Message} with correlationToken {correlationToken}";
-
-                _logger.LogError(new EventId(ex.HResult), ex, errorMessage);
-
-                return BadRequest(errorMessage);
-            }
-
-            return StatusCode(StatusCodes.Status201Created);
-        }
     }
 }

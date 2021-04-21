@@ -93,11 +93,8 @@ namespace Catalog.API.Domain.BusinessServices
                     ReleaseDate = product.ReleaseDate,
                     Upc = product.Upc
                 };
-
                 await _eventBusPublisher.Publish<ProductChangedEvent>(
                     await PrepareProductChangedEvent(productUpsert, correlationToken));
-
-                //product = await _musicRepository.GetById(product.Id, correlationToken);
             }
         }
 
@@ -119,62 +116,10 @@ namespace Catalog.API.Domain.BusinessServices
                 ReleaseDate = product.ReleaseDate,
                 Upc = product.Upc
             };
-
             //************** Publish Event  *************************
             await _eventBusPublisher.Publish<ProductChangedEvent>(
                 await PrepareProductChangedEvent(productUpsert, correlationToken));
         }
-
-        public async Task ManageReadModel(string correlationToken)
-        {
-            var productId = 0;
-            var productTitle = string.Empty;
-            var counter = 0;
-
-            try
-            {
-                var products = await _musicRepository.GetAll(correlationToken);
-
-                if (products.Count < 1) throw new Exception("Error in UpPropagateReadModel -- No products exist");
-
-                foreach (var product in products)
-                {
-                    productId = product.Id;
-                    productTitle = product.Title;
-                    counter++;
-
-                    var productChangedEvent = new ProductChangedEvent
-                    {
-                        Id = product.Id,
-                        Title = product.Title,
-                        ArtistName = product.Artist.Name,
-                        GenreName = product.Genre.Name,
-                        ParentalCaution = product.ParentalCaution,
-                        Cutout = product.Cutout,
-                        Price = product.Price,
-                        ReleaseDate = product.ReleaseDate,
-                        Upc = product.Upc,
-                        CorrelationToken = correlationToken
-                    };
-
-                    productChangedEvent.CorrelationToken = correlationToken;
-
-                    _logger.LogInformation(
-                        $"Adding product #{counter} to topic with {productId} and title {product.Title} with CorrelationToken {correlationToken}");
-
-                    await _eventBusPublisher.Publish<ProductChangedEvent>(productChangedEvent);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogInformation(
-                    $"Exception adding product #{counter} topic queue with {productId} and title {productTitle} with CorrelationToken {correlationToken}");
-
-                throw new Exception(
-                    $"Could not propegate product read model - exception thrown in PropegateReadModel in CatalogBusinessService - Message : {ex.Message}");
-            }
-        }
-
         private async Task<ProductChangedEvent> PrepareProductChangedEvent(ProductUpsert productUpsert,
             string correlationToken)
         {

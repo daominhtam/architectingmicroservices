@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Basket.API.Commands;
 using Basket.API.Domain;
 using Basket.API.Domain.Entities;
 using Basket.API.Dtos;
@@ -17,6 +16,5 @@ namespace Basket.API.Contracts
         Task EmptyBasket(string basketId, string correlationToken, bool hasOrderBeenCreated);
         Task<CheckoutEntity> Checkout(CheckoutDto checkout, string correlationToken);
         Task ProductChanged(ProductEntity productEntity, string correlationId);
-        Task BuildReadModel(AddProductCommand products, string correlationToken);
     }
 }
