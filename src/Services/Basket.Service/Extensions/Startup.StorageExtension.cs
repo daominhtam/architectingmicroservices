@@ -17,10 +17,10 @@ namespace Basket.API.Extensions
             {
                 return new AzureTableStorageRespository<ProductTableEntity>(
                     new AzureTableSettings(
-                        configuration["StorageAccount"] ??
+                        configuration["storageaccount"] ??
                         throw new ArgumentNullException("Storage Account for ProductEntity is Null"),
                         // 1/16/2020 - lw - storage key now comes from key vault
-                        configuration["storageKeySecret"] ??
+                        configuration["storagekeySecret"] ??
                         throw new ArgumentNullException("StorageKey for ProductEntity is Null"),
                         configuration["StorageTableName_Catalog"] ??
                         throw new ArgumentNullException("Storage Table Name for ProductEntity is Null")));

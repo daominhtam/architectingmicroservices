@@ -51,7 +51,7 @@ namespace Catalog.API
         // that is populated in the DeployToAzure.ps1 script
         private static string GetKeyVaultEndpoint()
         {
-            return Environment.GetEnvironmentVariable("KEYVAULT_ENDPOINT", EnvironmentVariableTarget.Machine);
+            return Environment.GetEnvironmentVariable("KEYVAULT_ENDPOINT_vet421", EnvironmentVariableTarget.Machine);
         }
     }
 }

@@ -25,50 +25,29 @@
 # If you make any changes to the ARM template, always run this script with
 # $ValidateOnly set to $true first
 # If you are using your own subscription, set $IsCloudSlice = $false
-
-
-#####################################################################################
-# LOCAL FUNCTIONS
-#####################################################################################
-# Function checks to see if the user is logged in as administrator
-function Test-Administrator
-{
-    $user = [Security.Principal.WindowsIdentity]::GetCurrent()
-
-    (New-Object Security.Principal.WindowsPrincipal $user).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)  
-}
-
-# Make sure user is in Admin mode
-# Did you open Powershell as and admin?
-if(!(Test-Administrator))
-{
-    Write-Host "Please close PowerShell ISE and open PowerShell ISE with Adminstrator access"
-    exit;
-}
-
 #####################################################################################
 # VARIABLES YOU NEED TO SET
 #####################################################################################
 # Your initials, use at least 5 characters
 # No special characters like hypen or &
 # Must start with a letter of the alphabet
-#$yourInitials = "your-initials"
-$yourInitials = Read-Host -Prompt 'Input unique 5+ string with no special chararcters'
 
+$yourInitials = "microv2conf"
+#$yourInitials = "your-initials"
 
 # Subscription ID 
+$subscriptionId = "c2c53b88-db9f-4780-8318-af2f14b5c1dd"
 #$subscriptionId = "your-subscription-id"
-$subscriptionId = Read-Host -Prompt 'Input your Azuure subscription Id'
 
 # Azure region where you want the resources deployed
 # You can retrieve location abbreviations from https://docs.microsoft.com/en-us/dotnet/api/microsoft.azure.documents.locationnames.eastus?view=azure-dotnet
+$location = "eastus"
 #$location = "your-regions"
-$location = Read-Host -Prompt 'Input your Azuure region'
 
 # Resource group name
 # The name of the resource group where your resources will be placed
+$resourceGroupName = "microv2conf"
 #$resourceGroupName = "your-resource-group"
-$resourceGroupName = Read-Host -Prompt 'Input your resource group name'
 
 # **********************************************************************************************
 # Should we bounce this script execution?
@@ -82,15 +61,6 @@ if (($yourInitials -eq '') -or `
 	Write-Host 'You must provide your Initials, Subscription ID and Azure region/location before executing' -foregroundcolor Yellow
 	exit
 }
-
-
-#trim input for trailing new line characters
-$yourInitials = $yourInitials.Trim()
-$subscriptionId = $subscriptionId.Trim()
-$location = $location.Trim()
-$resourceGroupName = $resourceGroupName.Trim()
-
-
 #####################################################################################
 # DO NOT CHANGE ANY OF THE VARIABLES BELOW
 #####################################################################################
@@ -122,6 +92,23 @@ $paramObject = @{
     'location' = $location
 }
 
+
+# Function checks to see if the user is logged in as administrator
+function Test-Administrator
+{
+    $user = [Security.Principal.WindowsIdentity]::GetCurrent()
+
+    (New-Object Security.Principal.WindowsPrincipal $user).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)  
+}
+
+# Did you open Powershell as and admin?
+if(!(Test-Administrator))
+{
+    Write-Host "Please close PowerShell ISE and open PowerShell ISE with Adminstrator access"
+    exit;
+}
+
+
 # If user not logged into Azure account, redirect to login screen
 # If user not logged into Azure account, redirect to login screen
 # Need to log in to both AzureRM and az login since we are 
@@ -135,11 +122,9 @@ if ([string]::IsNullOrEmpty($(Get-AzureRmContext).Account))
     Get-AzureRmSubscription –SubscriptionId $subscriptionId
     $VerbosePreference = "SilentlyContinue"
 
-
-    ################ Remove Azure CLI
     # Do an az login since we are also using az commands
-    #az login
-    #az account set --subscription $subscriptionId
+    az login
+    az account set --subscription $subscriptionId
 }
 
 
@@ -151,20 +136,34 @@ function Format-ValidationOutput {
 }
 
 # Check to see if the resource group already exists, if it doesn't $checkforResourceGroup will be null
-# If the rg exists, the script will use that rg, if not, it will create a new rg
+# For Cloud Slice, the resource group MUST already exist
+# For non-Cloud Slice, if the rg exists, the script will use that rg, if not, it will create a new rg
 $checkforResourceGroup = Get-AzureRmResourceGroup | Where ResourceGroupName -Like ($resourceGroupName)
 
-# New-AzureRmResourceGroup will check to see if the rg already exists and if it does it will
-# just put the resources in that rg, otherwise it will create a new rg
-if($checkforResourceGroup -eq $null)
+# If you are using Cloud Slice, check to make sure the user has entered the correct resource group name
+# because students cannot create their own resource groups
+if($IsCloudSlice)
 {
-    Write-Output '', "Resource group '$resourceGroupName' does not exist."
-    exit
 
-    ###Write-Host "Resource group '$resourceGroupName' does not exist. Creating a new resource group.";
-    ###Write-Host "Creating resource group '$resourceGroupName' in location '$location'";
-    ###New-AzureRmResourceGroup -Name $resourceGroupName -Location $location -Force
+if($checkforResourceGroup -eq $null)
+    {
+    Write-Host "The resource group name you entered is incorrect. Please try again"
+    exit;
+    }
 }
+else
+{
+    # If you are not using Cloud Slice, then you can name your resource group anything you wish
+    # New-AzureRmResourceGroup will check to see if the rg already exists and if it does it will
+    # just put the resources in that rg, otherwise it will create a new rg
+    if($checkforResourceGroup -eq $null)
+    {
+    Write-Host "Resource group '$resourceGroupName' does not exist. Creating a new resource group.";
+    Write-Host "Creating resource group '$resourceGroupName' in location '$location'";
+    New-AzureRmResourceGroup -Name $resourceGroupName -Location $location -Force
+    }
+}
+
 
 # If you are just validating your ARM template
 if ($ValidateOnly) 
@@ -200,8 +199,8 @@ else
         #Create an environment variable to hold the root key vault endpoint
         #This env variable is used so the app can access key vault secrets
         $kvEndpoint = "https://" + $kvName + ".vault.azure.net/"
-        [System.Environment]::SetEnvironmentVariable('KEYVAULT_ENDPOINT_MEMORY_LANE',$kvEndpoint,[System.EnvironmentVariableTarget]::Machine)
-        [System.Environment]::SetEnvironmentVariable('KEYVAULT_ENDPOINT_' + $yourInitials,$kvEndpoint,[System.EnvironmentVariableTarget]::Machine)
+        [System.Environment]::SetEnvironmentVariable('KEYVAULT_ENDPOINT',$kvEndpoint,[System.EnvironmentVariableTarget]::Machine)
+
     }
    
    # Deploy using the ARM template
@@ -212,7 +211,7 @@ else
                                        -Force -Verbose `
                                        -ErrorVariable ErrorMessages).Outputs
 
-     Write-Output $myOutput.Values.Value
+     #Write-Output $myOutput.Values.Value
 
     if ($ErrorMessages) {
         Write-Output '', 'Template deployment returned the following errors:', @(@($ErrorMessages) | ForEach-Object { $_.Exception.Message.TrimEnd("`r`n") })

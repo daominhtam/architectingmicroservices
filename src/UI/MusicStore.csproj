@@ -11,7 +11,7 @@
     <DefineConstants>$(DefineConstants);DEMO</DefineConstants>
     <MvcRazorCompileOnPublish>true</MvcRazorCompileOnPublish>
     <Configurations>Debug;Release;FullApp</Configurations>
-    <UserSecretsId>v2c4694b-984b-4f1b-b37f-9983ebed510c</UserSecretsId>
+    <UserSecretsId>v3c4694b-984b-4f1b-b37f-9983ebed510</UserSecretsId>
    </PropertyGroup>
 
 

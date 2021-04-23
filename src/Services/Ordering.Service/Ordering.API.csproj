@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <UserSecretsId>v2c4694b-984b-4f1b-b37f-9983ebed510c</UserSecretsId>
+    <UserSecretsId>v3c4694b-984b-4f1b-b37f-9983ebed510</UserSecretsId>
     <Configurations>Debug;Release;FullApp</Configurations>
     <ApplicationInsightsResourceId>/subscriptions/cbd3d961-af52-4b57-849e-a2f62cb07061/resourcegroups/Default-ApplicationInsights-EastUS/providers/microsoft.insights/components/Ordering.API</ApplicationInsightsResourceId>
   </PropertyGroup>

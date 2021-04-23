@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Ordering.Domain.Contracts;
 using Ordering.Infrastructure.NoSql.Repositories;
+using System;
 
 namespace Ordering.API.Extensions
 {
@@ -15,8 +16,12 @@ namespace Ordering.API.Extensions
             {
                 return new OrderRepository(
                     new DataStoreConfiguration(
-                        configuration["CosmosEndpoint"],
-                        configuration["cosmoskeysecret"]));
+                        configuration["cosmosendpoint"] ??
+                        throw new ArgumentNullException("Cosmos endpoint for ordering is Null"),
+                        configuration["cosmoskeysecret"] ??
+                        throw new ArgumentNullException("Cosmos endpoint for ordering is Null")));
+                        //configuration["cosmosendpoint"],
+                        //configuration["cosmoskeysecret"]));
                         //configuration["CosmosPrimaryKey"]));
             });
 

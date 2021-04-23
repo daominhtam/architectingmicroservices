@@ -186,8 +186,8 @@ Add-Content -Path $File  '"Ordering": "http://localhost:8085",'
 dotnet user-secrets set "Ordering" "http://localhost:8085" --project $finalDirectory
 
 # robvet, 3/30/2020, added feature flag for gRPC 
-#Add-Content -Path $File  '"gRPCFeatureFlag": "True",' 
-#dotnet user-secrets set "gRPCFeatureFlag" "True" --project $finalDirectory
+Add-Content -Path $File  '"gRPCFeatureFlag": "True",' 
+dotnet user-secrets set "gRPCFeatureFlag" "True" --project $finalDirectory
 
 ####################################################################################
 # This function is used to get a jwt access token for the Pricing Engine
@@ -196,36 +196,36 @@ dotnet user-secrets set "Ordering" "http://localhost:8085" --project $finalDirec
 # The URL is constructed and put into an Azure Key Vault secret
 # All the function does is get the token
 ####################################################################################
-#function Get-FunctionJwtToken
-#{
-#
-#param (
-#    [Parameter(Mandatory = $true)]
-#    [string]
-#    $ResourceGroupName,
-#
-#    [Parameter(Mandatory = $true)]
-#    [string]
-#    $FunctionAppName
-#)
-#
-#
-#    $publishingCredentials = Invoke-AzureRmResourceAction  `
-#        -ResourceGroupName $ResourceGroupName `
-#        -ResourceType 'Microsoft.Web/sites/config' `
-#        -ResourceName ('{0}/publishingcredentials' -f $FunctionAppName) `
-#        -Action list `
-#        -ApiVersion 2019-08-01 `
-#        -Force
-#
-#    $base64Credentials = [Convert]::ToBase64String(
-#        [Text.Encoding]::ASCII.GetBytes(
-#            ('{0}:{1}' -f $publishingCredentials.Properties.PublishingUserName, $publishingCredentials.Properties.PublishingPassword)))
-#
-#    return Invoke-RestMethod -Uri ('https://{0}.scm.azurewebsites.net/api/functions/admin/token' -f $FunctionAppName) `
-#        -Headers @{ Authorization = ('Basic {0}' -f $base64Credentials) }
-#
-#}
+function Get-FunctionJwtToken
+{
+
+param (
+    [Parameter(Mandatory = $true)]
+    [string]
+    $ResourceGroupName,
+
+    [Parameter(Mandatory = $true)]
+    [string]
+    $FunctionAppName
+)
+
+
+    $publishingCredentials = Invoke-AzureRmResourceAction  `
+        -ResourceGroupName $ResourceGroupName `
+        -ResourceType 'Microsoft.Web/sites/config' `
+        -ResourceName ('{0}/publishingcredentials' -f $FunctionAppName) `
+        -Action list `
+        -ApiVersion 2019-08-01 `
+        -Force
+
+    $base64Credentials = [Convert]::ToBase64String(
+        [Text.Encoding]::ASCII.GetBytes(
+            ('{0}:{1}' -f $publishingCredentials.Properties.PublishingUserName, $publishingCredentials.Properties.PublishingPassword)))
+
+    return Invoke-RestMethod -Uri ('https://{0}.scm.azurewebsites.net/api/functions/admin/token' -f $FunctionAppName) `
+        -Headers @{ Authorization = ('Basic {0}' -f $base64Credentials) }
+
+}
 
 
 #Build storage acccount settings
@@ -236,19 +236,7 @@ try
          $storageAccountUserSecrets="$YourInitials" + "storage" 
 
          Add-Content -Path $File  $storageAccount 
-         #dotnet user-secrets set $quote$storageAccountHeader$quote $storageAccountUserSecrets --project $finalDirectory
-
-         #store the storage account name in Azure Key Vault
-         #Converts the name to a secure string
-         $StorageAccountName = ConvertTo-SecureString -String $storageAccountUserSecrets -AsPlainText -Force
-
-         #Creates a new secret in Azure Key Vault
-         Write-Host "Setting storage account name in key vault..."
-         Write-Host
-         $StorageAccountNameSecret = Set-AzureKeyVaultSecret -VaultName $kvName -Name 'storageaccount' -SecretValue $StorageAccountName -Verbose
-
-
-
+         dotnet user-secrets set $quote$storageAccountHeader$quote $storageAccountUserSecrets --project $finalDirectory
     }
 catch 
     {
@@ -269,69 +257,66 @@ if ($WriteToScreen -eq "True")
 
 # APPCONFIG - ADD GRPC FEATURE
 # larrywa 5/3/2020, added feature flag for gRPC to Azure app config
+try
+{
+
+    #Create an environment variable to hold the primary connection string
+    # for Azure App Config
+    $appConfigConnString = az appconfig credential list -n $ConfigName --query "[?name == 'Primary']|[0].connectionString"
+    [System.Environment]::SetEnvironmentVariable('APPCONFIG_CONNSTRING',$appConfigConnString,[System.EnvironmentVariableTarget]::Machine)
+
+    # Use the connection string of App Config to set the feature flag, otherwise you'll
+    # have to use az login to log in first
+    az appconfig feature set --connection-string $appConfigConnString --feature gRPC --only-show-errors --yes
+    az appconfig feature enable --connection-string $appConfigConnString --feature gRPC --only-show-errors --yes
 
 
-#try
-#{
-#
-#    #Create an environment variable to hold the primary connection string
-#    # for Azure App Config
-#    $appConfigConnString = az appconfig credential list -n $ConfigName --query "[?name == 'Primary']|[0].connectionString"
-#    [System.Environment]::SetEnvironmentVariable('APPCONFIG_CONNSTRING',$appConfigConnString,[System.EnvironmentVariableTarget]::Machine)
-#
-#    # Use the connection string of App Config to set the feature flag, otherwise you'll
-#    # have to use az login to log in first
-#    az appconfig feature set --connection-string $appConfigConnString --feature gRPC --only-show-errors --yes
-#    az appconfig feature enable --connection-string $appConfigConnString --feature gRPC --only-show-errors --yes
-#
-#
-#    Add-Content -Path $File  "//----------------------------------------------"  
-#    Add-Content -Path $File  "// Azure App Config connection string           " 
-#    Add-Content -Path $File  "//----------------------------------------------"  
-#    Add-Content -Path $File  $appConfigConnString 
-#}
-#catch
-#{
-#    write-host "Exception setting Azure App Config gRPC feature flag:" -ForegroundColor Red
-#    write-host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
-#    write-host "Exception Message: $($_.Exception.Message)" -ForegroundColor Red
-#}
-
-
+    Add-Content -Path $File  "//----------------------------------------------"  
+    Add-Content -Path $File  "// Azure App Config connection string           " 
+    Add-Content -Path $File  "//----------------------------------------------"  
+    Add-Content -Path $File  $appConfigConnString 
+}
+catch
+{
+    write-host "Exception setting Azure App Config gRPC feature flag:" -ForegroundColor Red
+    write-host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
+    write-host "Exception Message: $($_.Exception.Message)" -ForegroundColor Red
+}
 
 # This code is used to build the URL for the PricingEngine function
 # The function has to already exist in the function app
-###try
-###{
-###
-###  # build the URI to get to the key
-###  $uriDefKey = [System.Uri]('https://' + $FuncAppName + '.azurewebsites.net/admin/functions/PricingEngine/keys/default')
-###
-###  # The function is setup for Function security, so we need to get the 'default' key for the function first
-###  $funcDefKey = Invoke-RestMethod -Uri $uriDefKey -Headers @{Authorization = ("Bearer {0}" -f (Get-FunctionJwtToken -ResourceGroupName $ResourceGroupName -FunctionAppName $FuncAppName)) } -Method Post
+try
+{
 
-###  #Build the function URL
-###  $funcBaseURL = 'https://' + $FuncAppName + '.azurewebsites.net/api/PricingEngine?code='
-###  $funcURL = $funcBaseURL + $funcDefKey.value
-###  $SecretFuncURLValue = ConvertTo-SecureString -String $funcURL -AsPlainText -Force
+  # build the URI to get to the key
+  $uriDefKey = [System.Uri]('https://' + $FuncAppName + '.azurewebsites.net/admin/functions/PricingEngine/keys/default')
 
+  # The function is setup for Function security, so we need to get the 'default' key for the function first
+  $funcDefKey = Invoke-RestMethod -Uri $uriDefKey -Headers @{Authorization = ("Bearer {0}" -f (Get-FunctionJwtToken -ResourceGroupName $ResourceGroupName -FunctionAppName $FuncAppName)) } -Method Post
 
-###  #put the function URL into a key vault secret
-###  $FuncURLSecret = Set-AzureKeyVaultSecret -VaultName $kvName -Name 'pricingenginefuncsecret' -SecretValue $SecretFuncURLValue -Verbose
-
-###    Add-Content -Path $File  "//----------------------------------------------"  
-###    Add-Content -Path $File  "// Azure PricingEnging Function URL             " 
-###    Add-Content -Path $File  "//----------------------------------------------"  
-###    Add-Content -Path $File  $funcURL 
+  #Build the function URL
+  $funcBaseURL = 'https://' + $FuncAppName + '.azurewebsites.net/api/PricingEngine?code='
+  $funcURL = $funcBaseURL + $funcDefKey.value
+  $SecretFuncURLValue = ConvertTo-SecureString -String $funcURL -AsPlainText -Force
 
 
-###}
-###catch
-###{
-###    write-host "Exception getting Azure function key to build URL:" -ForegroundColor Red
-###    write-host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
-###    write-host "Exception Message: $($_.Exception.Message)" -ForegroundColor Red
-###}
+  #put the function URL into a key vault secret
+  $FuncURLSecret = Set-AzureKeyVaultSecret -VaultName $kvName -Name 'pricingenginefuncsecret' -SecretValue $SecretFuncURLValue -Verbose
+
+    Add-Content -Path $File  "//----------------------------------------------"  
+    Add-Content -Path $File  "// Azure PricingEnging Function URL             " 
+    Add-Content -Path $File  "//----------------------------------------------"  
+    Add-Content -Path $File  $funcURL 
+
+
+}
+catch
+{
+    write-host "Exception getting Azure function key to build URL:" -ForegroundColor Red
+    write-host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
+    write-host "Exception Message: $($_.Exception.Message)" -ForegroundColor Red
+
+}
 
 #Build storage key settings
 try
@@ -345,9 +330,9 @@ try
     
     #****************************************************
     #VetMod-7-12-WriteToUserSecret
-    #if ($WriteSecretsToUserSecrets -eq "true") {
-        #dotnet user-secrets set "storagekeysecret" $storagePrimKey --project $finalDirectory
-    #}
+    if ($WriteSecretsToUserSecrets -eq "true") {
+        dotnet user-secrets set "storagekeysecret" $storagePrimKey --project $finalDirectory
+    }
     #****************************************************
         
     #store the key in Azure Key Vault
@@ -393,9 +378,9 @@ try
 
     #****************************************************
     #VetMod-7-12-WriteToUserSecret
-    #if ($WriteSecretsToUserSecrets -eq "true") {
-        #dotnet user-secrets set "catalogsqldbpwsecret" $password --project $finalDirectory
-	#}
+    if ($WriteSecretsToUserSecrets -eq "true") {
+        dotnet user-secrets set "catalogsqldbpwsecret" $password --project $finalDirectory
+	}
     #****************************************************
 
     #Converts the key to a secure string - put DB password in key vault
@@ -410,9 +395,9 @@ try
 
     #****************************************************
     #VetMod-7-12-WriteToUserSecret
-    #if ($WriteSecretsToUserSecrets -eq "true") {
-        #dotnet user-secrets set "catalogdbsecret" $catalogDBString --project $finalDirectory
-	#}
+    if ($WriteSecretsToUserSecrets -eq "true") {
+        dotnet user-secrets set "catalogdbsecret" $catalogDBString --project $finalDirectory
+	}
     #****************************************************
 
     #Converts the key to a secure string - put connection string in key vault
@@ -450,72 +435,70 @@ if ($WriteToScreen -eq "True")
     Write-Host $concatenatedCatalogString 
     Write-Host 
 }
-
-
 #Build Sql DB - Orders settings
 
-#try
-#{
-#    #Get the database connection string for the Catalog database
-#    $ordersConnectionStringHeader="OrdersConnectionString"
-#    $sqlLoginSuffix = "sqllogin"
-#    $sqlPasswordSuffix = "pass@word1$"
-#    $userId = "$YourInitials$sqlLoginSuffix"
-#    $password = "$YourInitials$sqlPasswordSuffix"
-#
-#    #Converts the key to a secure string - put DB password in key vault
-#    $DBPwSecretValue = ConvertTo-SecureString -String $password -AsPlainText -Force
-#    $DBPasswordSecret = Set-AzureKeyVaultSecret -VaultName $kvName -Name 'orderssqldbpwsecret' -SecretValue $DBPwSecretValue -Verbose
-#
-#    $ServerName = "$YourInitials-dbsvr.database.windows.net"
-#    $ordersDBString= "Server=tcp:$YourInitials-dbsvr.database.windows.net,1433;Initial Catalog=Services.Orders;Persist Security Info=False;User ID=$userId;Password=$password;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
-#    $concatenatedOrdersString = "$quote$ordersConnectionStringHeader$quote$colon$quote$ordersDBString$quote$comma"
-#    $ordersDBStringUserSecrets = "$ordersDBString"
-#
-#    #****************************************************
-#    #VetMod-7-12-WriteToUserSecret
-#    #if ($WriteSecretsToUserSecrets -eq "true") {
-#    #    dotnet user-secrets set "orderdbsecret" $ordersDBString --project $finalDirectory
-#	#}
-#    #****************************************************
-#
-#    #Converts the key to a secure string - put connection string in key vault
-#    $DBSecretValue = ConvertTo-SecureString -String $ordersDBString -AsPlainText -Force
-#    $DBSecret = Set-AzureKeyVaultSecret -VaultName $kvName -Name 'orderdbsecret' -SecretValue $DBSecretValue -Verbose
-#
-#    # Add database credentials for troubleshooting
-#    dotnet user-secrets set "Orders Sql Database Server Name" $ServerName --project $finalDirectory
-#
-#
-#    #Add-Content -Path $File  "Sql Database Login = $userId,"
-#    dotnet user-secrets set "Orders Sql Database Login" $userId --project $finalDirectory
-#
-#    Add-Content -Path $File  $concatenatedOrdersString 
-#
-#}
-#catch
-#{
-#    write-host "Exception capturing Orders Sql DB secrets:" -ForegroundColor Red
-#    write-host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
-#    write-host "Exception Message: $($_.Exception.Message)" -ForegroundColor Red
-#    Write-Host "Error with $storageAccountKey" -ForegroundColor Red
-#}
+try
+{
+    #Get the database connection string for the Catalog database
+    $ordersConnectionStringHeader="OrdersConnectionString"
+    $sqlLoginSuffix = "sqllogin"
+    $sqlPasswordSuffix = "pass@word1$"
+    $userId = "$YourInitials$sqlLoginSuffix"
+    $password = "$YourInitials$sqlPasswordSuffix"
 
-#if ($WriteToScreen -eq "True") 
-#{
-#    Write-Host "//Orders Azure Sql Database credentials" 
-#    Write-Host "SqlLogin=$userId"
-#    Write-Host "SqlPassword=$password" 
-#    Write-Host 
-#}
+    #Converts the key to a secure string - put DB password in key vault
+    $DBPwSecretValue = ConvertTo-SecureString -String $password -AsPlainText -Force
+    $DBPasswordSecret = Set-AzureKeyVaultSecret -VaultName $kvName -Name 'orderssqldbpwsecret' -SecretValue $DBPwSecretValue -Verbose
+
+    $ServerName = "$YourInitials-dbsvr.database.windows.net"
+    $ordersDBString= "Server=tcp:$YourInitials-dbsvr.database.windows.net,1433;Initial Catalog=Services.Orders;Persist Security Info=False;User ID=$userId;Password=$password;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+    $concatenatedOrdersString = "$quote$ordersConnectionStringHeader$quote$colon$quote$ordersDBString$quote$comma"
+    $ordersDBStringUserSecrets = "$ordersDBString"
+
+    #****************************************************
+    #VetMod-7-12-WriteToUserSecret
+    if ($WriteSecretsToUserSecrets -eq "true") {
+        dotnet user-secrets set "orderdbsecret" $ordersDBString --project $finalDirectory
+	}
+    #****************************************************
+
+    #Converts the key to a secure string - put connection string in key vault
+    $DBSecretValue = ConvertTo-SecureString -String $ordersDBString -AsPlainText -Force
+    $DBSecret = Set-AzureKeyVaultSecret -VaultName $kvName -Name 'orderdbsecret' -SecretValue $DBSecretValue -Verbose
+
+    # Add database credentials for troubleshooting
+    dotnet user-secrets set "Orders Sql Database Server Name" $ServerName --project $finalDirectory
 
 
-#if ($WriteToScreen -eq "True") 
-#{
-#    Write-Host "//Orders Database connection string" 
-#    Write-Host $concatenatedOrdersString 
-#    Write-Host 
-#}
+    #Add-Content -Path $File  "Sql Database Login = $userId,"
+    dotnet user-secrets set "Orders Sql Database Login" $userId --project $finalDirectory
+
+    Add-Content -Path $File  $concatenatedOrdersString 
+
+}
+catch
+{
+    write-host "Exception capturing Orders Sql DB secrets:" -ForegroundColor Red
+    write-host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
+    write-host "Exception Message: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "Error with $storageAccountKey" -ForegroundColor Red
+}
+
+if ($WriteToScreen -eq "True") 
+{
+    Write-Host "//Orders Azure Sql Database credentials" 
+    Write-Host "SqlLogin=$userId"
+    Write-Host "SqlPassword=$password" 
+    Write-Host 
+}
+
+
+if ($WriteToScreen -eq "True") 
+{
+    Write-Host "//Orders Database connection string" 
+    Write-Host $concatenatedOrdersString 
+    Write-Host 
+}
 
 
 #Build Redis Cache settings
@@ -528,15 +511,13 @@ try
     $redisAll = (Get-AzureRmRedisCache -ResourceGroupName $ResourceGroupName -Name $redisCacheName)
     $redisPrimKey = (Get-AzureRmRedisCacheKey -ResourceGroupName $ResourceGroupName -Name $redisCacheName).PrimaryKey  
     $redisEndpoint = $redisAll.HostName + ":" + $redisAll.Port
-    
-    $redisConnString = ($redisEndpoint + ",password=" + $redisPrimKey + ",ssl=True,abortConnect=False")
-    #$redisConnString = $redisEndpoint + ",password=" + $redisPrimKey + ",ssl=True,abortConnect=False"
+    $redisConnString = $redisEndpoint + ",password=" + $redisPrimKey + ",ssl=True,abortConnect=False"
     
     #****************************************************
     #VetMod-7-12-WriteToUserSecret
-    #if ($WriteSecretsToUserSecrets -eq "true") {
-    #    dotnet user-secrets set "redisconnstrsecret" $redisConnString --project $finalDirectory    
-	#}
+    if ($WriteSecretsToUserSecrets -eq "true") {
+        dotnet user-secrets set "redisconnstrsecret" $redisConnString --project $finalDirectory    
+	}
     #****************************************************
          
     #store the key in Azure Key Vault
@@ -577,9 +558,9 @@ try
 
     #****************************************************
     #VetMod-7-12-WriteToUserSecret
-    #if ($WriteSecretsToUserSecrets -eq "true") {
-    #    dotnet user-secrets set "sbconnstrsecret" $topicStringUserSecrets --project $finalDirectory
-	#}
+    if ($WriteSecretsToUserSecrets -eq "true") {
+        dotnet user-secrets set "sbconnstrsecret" $topicStringUserSecrets --project $finalDirectory
+	}
     #****************************************************
 
     #store the key in Azure Key Vault
@@ -593,7 +574,7 @@ try
     $kvSBSecValue = $SBStorageSecret.Id
 
     Add-Content -Path $File  $topicString 
-    #dotnet user-secrets set $quote$topicPrefix$quote $topic$topicSuffix --project $finalDirectory
+    dotnet user-secrets set $quote$topicPrefix$quote $topic$topicSuffix --project $finalDirectory
 
 }
 catch
@@ -633,27 +614,13 @@ try
     $cosmosUriHeader="CosmosEndpoint"
     $cosmosUriString="$YourInitials-cosmosdb.documents.azure.com:443"
     $cosmosUriWithHttps="$https$YourInitials-cosmosdb.documents.azure.com:443"
-    #$cosmosUri="$quote$cosmosUriHeader$quote$colon$quote$https$cosmosUriString$quote$comma"
-
-    #Add-Content -Path $File  $cosmosUri 
-
-    #store the Cosmos endpoint in Azure Key Vault
-         #Converts the name to a secure string
-    $CosmosEndpointAsSecret = ConvertTo-SecureString -String $cosmosUriWithHttps -AsPlainText -Force
-
-         #Creates a new secret in Azure Key Vault
-         Write-Host "Setting storage account name in key vault..."
-         Write-Host
-    $CosmosUri = Set-AzureKeyVaultSecret -VaultName $kvName -Name 'cosmosendpoint' -SecretValue $CosmosEndpointAsSecret -Verbose
+    $cosmosUri="$quote$cosmosUriHeader$quote$colon$quote$https$cosmosUriString$quote$comma"
 
 
-
-
-
-
+    Add-Content -Path $File  $cosmosUri 
 
     #fix
-    ##dotnet user-secrets set $quote$cosmosUriHeader$quote $cosmosUriWithHttps --project $finalDirectory
+    dotnet user-secrets set $quote$cosmosUriHeader$quote $cosmosUriWithHttps --project $finalDirectory
 }
 catch
 {
@@ -682,9 +649,9 @@ try
 
     #****************************************************
     #VetMod-7-12-WriteToUserSecret
-    #if ($WriteSecretsToUserSecrets -eq "true") {
-    #    dotnet user-secrets set "cosmoskeysecret" $cosmosKeyUserSecrets --project $finalDirectory    
-	#}
+    if ($WriteSecretsToUserSecrets -eq "true") {
+        dotnet user-secrets set "cosmoskeysecret" $cosmosKeyUserSecrets --project $finalDirectory    
+	}
     #****************************************************
 
     #Converts the key to a secure string
@@ -726,16 +693,16 @@ try
     $instrumKey = $appInsightsInfo.InstrumentationKey
     #****************************************************
     #VetMod-7-12-WriteToUserSecret
-    #if ($WriteSecretsToUserSecrets -eq "true") {
-    #    dotnet user-secrets set "aiinstrumkeysecret" $instrumKey --project $finalDirectory
-	#}
+    if ($WriteSecretsToUserSecrets -eq "true") {
+        dotnet user-secrets set "aiinstrumkeysecret" $instrumKey --project $finalDirectory
+	}
     #****************************************************
 
     #****************************************************
     #VetMod-7-12-WriteToUserSecret
-    #if ($WriteSecretsToUserSecrets -eq "true") {
-    #    dotnet user-secrets set "aiinstrumkeysecret" $instrumKey --project $finalDirectory
-	#}
+    if ($WriteSecretsToUserSecrets -eq "true") {
+        dotnet user-secrets set "aiinstrumkeysecret" $instrumKey --project $finalDirectory
+	}
     #****************************************************
 
     #store the instrumentation key in Azure Key Vault
@@ -775,7 +742,7 @@ Add-Content -Path $File  "// ACR Info                                     "
 Add-Content -Path $File  "//----------------------------------------------"  
 
 Add-Content -Path $File  $acrRegistry 
-#dotnet user-secrets set $quote$acrRegistryPrefix$quote $acrRegistryNameForUserSecrets --project $finalDirectory
+dotnet user-secrets set $quote$acrRegistryPrefix$quote $acrRegistryNameForUserSecrets --project $finalDirectory
 #Add-Content -Path $File  " " 
 
 if ($WriteToScreen -eq "True") 
@@ -792,7 +759,7 @@ $acrServer="$quote$acrServerPrefix$quote$colon$quote$acrServerName$quote"
 
 
 Add-Content -Path $File  $acrServer 
-#dotnet user-secrets set $quote$acrServerPrefix$quote $quote$acrServerName$quote --project $finalDirectory
+dotnet user-secrets set $quote$acrServerPrefix$quote $quote$acrServerName$quote --project $finalDirectory
 
 if ($WriteToScreen -eq "True") 
 {
@@ -803,7 +770,7 @@ if ($WriteToScreen -eq "True")
 # Clean up
 Write-Host "Logging out of Azure"
 Logout-AzureRmAccount
-#az logout
+az logout
 
 #**************************************
 # End Processing
@@ -815,7 +782,7 @@ Write-Host "********************************************************************
 Write-Host "Done processing " 
 Write-Host "Here are your secrets..." 
 Write-Host  
-#dotnet user-secrets list --project $finalDirectory
+dotnet user-secrets list --project $finalDirectory
 Write-Host  
 Write-Host "**********************************************************************************************" 
 Write-Host  "Important Note:" 

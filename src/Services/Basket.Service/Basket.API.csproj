@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <UserSecretsId>v2c4694b-984b-4f1b-b37f-9983ebed510c</UserSecretsId>
+    <UserSecretsId>v3c4694b-984b-4f1b-b37f-9983ebed510</UserSecretsId>
     <ApplicationInsightsResourceId>/subscriptions/c2c53b88-db9f-4780-8318-af2f14b5c1dd/resourcegroups/ActivateAzureLearn/providers/microsoft.insights/components/ActivateAzureLearn</ApplicationInsightsResourceId>
     <ApplicationInsightsAnnotationResourceId>/subscriptions/c2c53b88-db9f-4780-8318-af2f14b5c1dd/resourcegroups/ActivateAzureLearn/providers/microsoft.insights/components/ActivateAzureLearn</ApplicationInsightsAnnotationResourceId>
     <Configurations>Debug;Release;FullApp</Configurations>
