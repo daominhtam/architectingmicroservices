@@ -7,25 +7,24 @@
 # Although this script is normally executed from the DeployToAzure script, it can be executed separately if you
 # supply the parameters at runtime. If you wish to run the script separately, change the directory where this file is 
 # location (in the command window below) and then do :
-# .\PullUserSecretInfo.ps1 -YourInitials <yourinitials> -ResourceGroupName <resourcegroupfromAzure> -subscriptionId <subscIdfrom Azure>
+# .\PullUserSecretInfo.ps1 -appName <appName> -ResourceGroupName <resourcegroupfromAzure> -subscriptionId <subscIdfrom Azure>
 #
 #####################################################################################
 
 Param(
-    [string] [Parameter(Mandatory=$true)] $YourInitials,
+    [string] [Parameter(Mandatory=$true)] $appName,
     [string] $ResourceGroupName,
     [string] $subscriptionId
 ) 
 
-
 # **********************************************************************************************
 # Should we bounce this script execution?
 # **********************************************************************************************
-if (($YourInitials -eq '') -or `
+if (($appName -eq '') -or `
     ($ResourceGroupName -eq '') -or `
 	($subscriptionId -eq ''))
 {
-	Write-Host 'You must provide your Initials, Resource Group Name and Subscription ID, before executing' -foregroundcolor Yellow
+	Write-Host 'You must provide your AppName, Resource Group Name and Subscription ID, before executing' -foregroundcolor Yellow
 	exit
 }
 
@@ -46,7 +45,7 @@ if(!(Test-Administrator))
 
 Write-Host 
 Write-Host "----------------------------------------------------------------------------------------------"
-Write-Host "Your initials are" $YourInitials
+Write-Host "Your AppName are" $appName
 Write-Host "Your ResourceGroup is" $ResourceGroupName
 Write-Host "Your SubscriptioniId is" $subscriptionId
 
@@ -60,7 +59,6 @@ Write-Host "Your SubscriptioniId is" $subscriptionId
 #
 # User Secrets
 # https://docs.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-3.0&tabs=windows
-
 #
 #
 ##########################################################################################
@@ -70,7 +68,6 @@ Write-Host "Your SubscriptioniId is" $subscriptionId
 ####################################################
 $filePath="c:\microservices_workshop\"
 $fileName="usersecrets.txt"
-
 
 ####################################################
 # Set project directory in which script will run
@@ -130,22 +127,19 @@ if ([string]::IsNullOrEmpty($(Get-AzureRmContext).Account))
     az account set --subscription $subscriptionId
 }
 
-
 #Helpers
 $quote='"'
 $colon=':'
 $comma=','
 $https="https://"
-$kvName = $YourInitials + "keyvault"
+$kvName = $appName + "keyvault"
 
 #CosmosDB database name
-$DBName = -join($YourInitials,'-cosmosdb')
+$DBName = -join($appName,'-cosmosdb')
 #Config name
-$ConfigName = -join($YourInitials,'-appconfig')
+$ConfigName = -join($appName,'-appconfig')
 #Function name
-$FuncAppName = -join($YourInitials,'-functapp')
-
-
+$FuncAppName = -join($appName,'-functapp')
 
 # Create new file
 $File = New-Item $filePath$fileName -type file -force
@@ -155,20 +149,17 @@ Write-Host " Processing, please be patient..."
 Write-Host "----------------------------------------------------------------------------------------------" 
 Write-Host 
 
-
 #**************************************
 # Start Processing
 #**************************************
 Add-Content -Path $File  '{' 
 
 #Get the Storage account name 
-#This is your initials plus activateazure  
+#This is your AppName plus activateazure  
 #https://stackoverflow.com/questions/3896258/how-do-i-output-text-without-a-newline-in-powershell
-
 
 # clear out existing content in user secrets file
 dotnet user-secrets clear --project $finalDirectory
-
 
 # Write default ServiceUrls 
 # robvet, 6-28-2018, removed "ServiceUrl" JSON tag hierarchy
@@ -227,13 +218,12 @@ dotnet user-secrets set "Ordering" "http://localhost:8085" --project $finalDirec
 #
 #}
 
-
 #Build storage acccount settings
 try  
     {
          $storageAccountHeader="StorageAccount"
-         $storageAccount="$quote$storageAccountHeader$quote$colon$quote$YourInitials" + "storage" + "$quote$comma"
-         $storageAccountUserSecrets="$YourInitials" + "storage" 
+         $storageAccount="$quote$storageAccountHeader$quote$colon$quote$appName" + "storage" + "$quote$comma"
+         $storageAccountUserSecrets="$appName" + "storage" 
 
          Add-Content -Path $File  $storageAccount 
          #dotnet user-secrets set $quote$storageAccountHeader$quote $storageAccountUserSecrets --project $finalDirectory
@@ -246,9 +236,6 @@ try
          Write-Host "Setting storage account name in key vault..."
          Write-Host
          $StorageAccountNameSecret = Set-AzureKeyVaultSecret -VaultName $kvName -Name 'storageaccount' -SecretValue $StorageAccountName -Verbose
-
-
-
     }
 catch 
     {
@@ -269,7 +256,6 @@ if ($WriteToScreen -eq "True")
 
 # APPCONFIG - ADD GRPC FEATURE
 # larrywa 5/3/2020, added feature flag for gRPC to Azure app config
-
 
 #try
 #{
@@ -296,8 +282,6 @@ if ($WriteToScreen -eq "True")
 #    write-host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
 #    write-host "Exception Message: $($_.Exception.Message)" -ForegroundColor Red
 #}
-
-
 
 # This code is used to build the URL for the PricingEngine function
 # The function has to already exist in the function app
@@ -337,9 +321,9 @@ if ($WriteToScreen -eq "True")
 try
 {
     #Get the Storage account key - primary key 
-    $accountName = "$YourInitials" + "storage"
+    $accountName = "$appName" + "storage"
     $storageKeyHeader="StorageKey"
-    $storagePrimKey = (Get-AzureRmStorageAccountKey -ResourceGroupName $ResourceGroupName -Name ($YourInitials + "storage")).Value[0] 
+    $storagePrimKey = (Get-AzureRmStorageAccountKey -ResourceGroupName $ResourceGroupName -Name ($appName + "storage")).Value[0] 
     $storageAccountKey="$quote$storageKeyHeader$quote$colon$quote$storagePrimKey$quote$comma"
     $storageAccountKeyUserSecrets="$storagePrimKey"
     
@@ -380,7 +364,6 @@ if ($WriteToScreen -eq "True")
     Write-Host 
 }
 
-
 #Build Sql DB - Catalog settings
 try
 {
@@ -388,8 +371,8 @@ try
     $catalogConnectionStringHeader="CatalogConnectionString"
     $sqlLoginSuffix = "sqllogin"
     $sqlPasswordSuffix = "pass@word1$"
-    $userId = "$YourInitials$sqlLoginSuffix"
-    $password = "$YourInitials$sqlPasswordSuffix"
+    $userId = "$appName$sqlLoginSuffix"
+    $password = "$appName$sqlPasswordSuffix"
 
     #****************************************************
     #VetMod-7-12-WriteToUserSecret
@@ -403,8 +386,8 @@ try
     $DBPasswordSecret = Set-AzureKeyVaultSecret -VaultName $kvName -Name 'catalogsqldbpwsecret' -SecretValue $DBPwSecretValue -Verbose
 
     # add database connecton string for Catalog SQLDbDatabase
-    $ServerName = "$YourInitials-dbsvr.database.windows.net"
-    $catalogDBString= "Server=tcp:$YourInitials-dbsvr.database.windows.net,1433;Initial Catalog=Services.Catalog;Persist Security Info=False;User ID=$userId;Password=$password;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+    $ServerName = "$appName-dbsvr.database.windows.net"
+    $catalogDBString= "Server=tcp:$appName-dbsvr.database.windows.net,1433;Initial Catalog=Services.Catalog;Persist Security Info=False;User ID=$userId;Password=$password;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
     $concatenatedCatalogString = "$quote$catalogConnectionStringHeader$quote$colon$quote$catalogDBString$quote$comma"
     $catalogDBStringUserSecrets = "$catalogDBString"
 
@@ -451,7 +434,6 @@ if ($WriteToScreen -eq "True")
     Write-Host 
 }
 
-
 #Build Sql DB - Orders settings
 
 #try
@@ -460,15 +442,15 @@ if ($WriteToScreen -eq "True")
 #    $ordersConnectionStringHeader="OrdersConnectionString"
 #    $sqlLoginSuffix = "sqllogin"
 #    $sqlPasswordSuffix = "pass@word1$"
-#    $userId = "$YourInitials$sqlLoginSuffix"
-#    $password = "$YourInitials$sqlPasswordSuffix"
+#    $userId = "$appName$sqlLoginSuffix"
+#    $password = "$appName$sqlPasswordSuffix"
 #
 #    #Converts the key to a secure string - put DB password in key vault
 #    $DBPwSecretValue = ConvertTo-SecureString -String $password -AsPlainText -Force
 #    $DBPasswordSecret = Set-AzureKeyVaultSecret -VaultName $kvName -Name 'orderssqldbpwsecret' -SecretValue $DBPwSecretValue -Verbose
 #
-#    $ServerName = "$YourInitials-dbsvr.database.windows.net"
-#    $ordersDBString= "Server=tcp:$YourInitials-dbsvr.database.windows.net,1433;Initial Catalog=Services.Orders;Persist Security Info=False;User ID=$userId;Password=$password;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+#    $ServerName = "$appName-dbsvr.database.windows.net"
+#    $ordersDBString= "Server=tcp:$appName-dbsvr.database.windows.net,1433;Initial Catalog=Services.Orders;Persist Security Info=False;User ID=$userId;Password=$password;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
 #    $concatenatedOrdersString = "$quote$ordersConnectionStringHeader$quote$colon$quote$ordersDBString$quote$comma"
 #    $ordersDBStringUserSecrets = "$ordersDBString"
 #
@@ -524,7 +506,7 @@ try
 {
  #Get the Storage account key - primary key 
     $redisKeyHeader = "RedisConnectionString="
-    $redisCacheName = "$YourInitials" + "-redis"
+    $redisCacheName = "$appName" + "-redis"
     $redisAll = (Get-AzureRmRedisCache -ResourceGroupName $ResourceGroupName -Name $redisCacheName)
     $redisPrimKey = (Get-AzureRmRedisCacheKey -ResourceGroupName $ResourceGroupName -Name $redisCacheName).PrimaryKey  
     $redisEndpoint = $redisAll.HostName + ":" + $redisAll.Port
@@ -570,7 +552,7 @@ try
 {
     # Get the Topic connection string
     $topicPrefix = "ServiceBusPublisherConnectionString"
-    $topic = (Get-AzureRmServiceBusKey -ResourceGroupName $ResourceGroupName -Namespace $YourInitials-sbns -Name RootManageSharedAccessKey).PrimaryConnectionString
+    $topic = (Get-AzureRmServiceBusKey -ResourceGroupName $ResourceGroupName -Namespace $appName-sbns -Name RootManageSharedAccessKey).PrimaryConnectionString
     $topicSuffix = ";EntityPath=eventbustopic"
     $topicString="$quote$topicPrefix$quote$colon$quote$topic$topicSuffix$quote$comma"
     $topicStringUserSecrets="$topic$topicSuffix"
@@ -631,8 +613,8 @@ try
 
     # Get the CosmosDB connection URI
     $cosmosUriHeader="CosmosEndpoint"
-    $cosmosUriString="$YourInitials-cosmosdb.documents.azure.com:443"
-    $cosmosUriWithHttps="$https$YourInitials-cosmosdb.documents.azure.com:443"
+    $cosmosUriString="$appName-cosmosdb.documents.azure.com:443"
+    $cosmosUriWithHttps="$https$appName-cosmosdb.documents.azure.com:443"
     #$cosmosUri="$quote$cosmosUriHeader$quote$colon$quote$https$cosmosUriString$quote$comma"
 
     #Add-Content -Path $File  $cosmosUri 
@@ -645,12 +627,6 @@ try
          Write-Host "Setting storage account name in key vault..."
          Write-Host
     $CosmosUri = Set-AzureKeyVaultSecret -VaultName $kvName -Name 'cosmosendpoint' -SecretValue $CosmosEndpointAsSecret -Verbose
-
-
-
-
-
-
 
     #fix
     ##dotnet user-secrets set $quote$cosmosUriHeader$quote $cosmosUriWithHttps --project $finalDirectory
@@ -722,7 +698,7 @@ if ($WriteToScreen -eq "True")
 #Build Application Insights
 try
 {
-    $appInsightsInfo = Get-AzureRmApplicationInsights -ResourceGroupName $ResourceGroupName -Name ($YourInitials + "-appinsights")
+    $appInsightsInfo = Get-AzureRmApplicationInsights -ResourceGroupName $ResourceGroupName -Name ($appName + "-appinsights")
     $instrumKey = $appInsightsInfo.InstrumentationKey
     #****************************************************
     #VetMod-7-12-WriteToUserSecret
@@ -766,7 +742,7 @@ catch
 
 #Get ACR Resgisty Name
 $acrRegistryPrefix="ContainerRegistryName"
-$acrRegistryName=$YourInitials+"acr"
+$acrRegistryName=$appName+"acr"
 $acrRegistry="$quote$acrRegistryPrefix$quote$colon$quote$acrRegistryName$quote$comma"
 $acrRegistryNameForUserSecrets="$acrRegistryName"
 
@@ -787,7 +763,7 @@ if ($WriteToScreen -eq "True")
 
 #Get ACR Resgisty Login Server
 $acrServerPrefix="ContainerLoginServer"
-$acrServerName=$YourInitials+"acr.azurecr.io"
+$acrServerName=$appName+"acr.azurecr.io"
 $acrServer="$quote$acrServerPrefix$quote$colon$quote$acrServerName$quote"
 
 

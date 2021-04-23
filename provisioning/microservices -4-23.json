@@ -2,7 +2,7 @@
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "appName": {
+    "yourInitials": {
       "type": "string",
       "minLength": 5
     },
@@ -11,28 +11,28 @@
     }
   },
   "variables": {
-    "sbNamespaceAuthRule": "[toLower(concat(variables('serviceBusNamespaceName'),concat('/',toLower(parameters('appName')),'nsrule')))]",
-    "topicNamespaceAuthRule": "[toLower(concat(variables('serviceBusNamespaceName'),concat('/',toLower(parameters('appName')),'topicrule')))]",
-    "serviceBusNamespaceName": "[toLower(concat(toLower(parameters('appName')),'-sbns'))]",
+    "sbNamespaceAuthRule": "[toLower(concat(variables('serviceBusNamespaceName'),concat('/',toLower(parameters('yourInitials')),'nsrule')))]",
+    "topicNamespaceAuthRule": "[toLower(concat(variables('serviceBusNamespaceName'),concat('/',toLower(parameters('yourInitials')),'topicrule')))]",
+    "serviceBusNamespaceName": "[toLower(concat(toLower(parameters('yourInitials')),'-sbns'))]",
     "sbVersion": "2017-04-01",
     "enableNonSslPort": "true",
     "azAppConfigVersion": "2019-11-01-preview",
-    "dbserver-Name": "[toLower(concat(parameters('appName'),'-dbsvr'))]",
-    "dbserver-AdminLogin": "[concat(toLower(parameters('appName')),'sqllogin')]",
-    "dbserver-AdminLoginPassword": "[concat(toLower(parameters('appName')),'pass@word1$')]",
-    "storageAcctName": "[toLower(concat(toLower(parameters('appName')),'storage'))]",
-    "cosmosAcctName": "[concat(toLower(parameters('appName')),'-cosmosdb')]",
+    "dbserver-Name": "[toLower(concat(parameters('yourInitials'),'-dbsvr'))]",
+    "dbserver-AdminLogin": "[concat(toLower(parameters('yourInitials')),'sqllogin')]",
+    "dbserver-AdminLoginPassword": "[concat(toLower(parameters('yourInitials')),'pass@word1$')]",
+    "storageAcctName": "[toLower(concat(toLower(parameters('yourInitials')),'storage'))]",
+    "cosmosAcctName": "[concat(toLower(parameters('yourInitials')),'-cosmosdb')]",
     "storageAcctType": "Standard_LRS",
     "catalog-Name": "Services.Catalog",
     "catalog-Collation": "SQL_Latin1_General_CP1_CI_AS",
     "catalog-Edition": "Basic",
     "catalog-RequestedServiceObjectiveName": "Basic",
     "serviceBusTopicName": "eventbustopic",
-    "acrName": "[concat(toLower(parameters('appName')),'acr')]",
+    "acrName": "[concat(toLower(parameters('yourInitials')),'acr')]",
     "acrAdminUserEnabled": "true",
-    "redisName": "[toLower(concat(toLower(parameters('appName')),'-redis'))]",
-    "appInsightsName": "[toLower(concat(toLower(parameters('appName')), '-appInsights'))]",
-    "appConfigName": "[toLower(concat(toLower(parameters('appName')), '-appConfig'))]"
+    "redisName": "[toLower(concat(toLower(parameters('yourInitials')),'-redis'))]",
+    "appInsightsName": "[toLower(concat(toLower(parameters('yourInitials')), '-appInsights'))]",
+    "appConfigName": "[toLower(concat(toLower(parameters('yourInitials')), '-appConfig'))]"
 
   },
 
