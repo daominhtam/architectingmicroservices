@@ -49,8 +49,8 @@ if(!(Test-Administrator))
 #####################################################################################
 # PARSE PARAMETERS
 #####################################################################################
-# Read from 'provision.json' file
-$JsonParameters = Get-Content "./provision.json" | ConvertFrom-JSON
+# Read from 'deploymentInfo.json' file
+$JsonParameters = Get-Content "./deploymentInfo.json" | ConvertFrom-JSON
 
 # parse appname
 $appName = $JsonParameters.appName
@@ -109,7 +109,7 @@ if (($appName -eq '') -or `
 }
 
 #trim input for trailing new line characters
-$appName = $appName.Trim()
+$appName = $appName.Trim().ToLower()
 $subscriptionId = $subscriptionId.Trim()
 $location = $location.Trim()
 $resourceGroupName = $resourceGroupName.Trim()
@@ -151,19 +151,30 @@ $paramObject = @{
 # using az commands
 if ([string]::IsNullOrEmpty($(Get-AzureRmContext).Account)) 
 {
-    Login-AzureRmAccount 
-    #If more than one under your account
-    Select-AzureRmSubscription -SubscriptionId $subscriptionId
-    #Verify Current Subscription
-    Get-AzureRmSubscription –SubscriptionId $subscriptionId
-    $VerbosePreference = "SilentlyContinue"
+    try
+    {
+        Login-AzureRmAccount 
+        #If more than one under your account
+        Select-AzureRmSubscription -SubscriptionId $subscriptionId
+        #Verify Current Subscription
+        Get-AzureRmSubscription –SubscriptionId $subscriptionId
+        $VerbosePreference = "SilentlyContinue"
 
 
-    ################ Remove Azure CLI
-    # Do an az login since we are also using az commands
-    #az login
-    #az account set --subscription $subscriptionId
+        ################ Remove Azure CLI
+        # Do an az login since we are also using az commands
+        #az login
+        #az account set --subscription $subscriptionId
+     }
+     catch
+     {
+        write-host "Exception capturing authenticating to Azure:" -ForegroundColor Red
+        write-host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
+        write-host "Exception Message: $($_.Exception.Message)" -ForegroundColor Red
+        Exit
+      }
 }
+
 
 # Function for validating ARM template
 function Format-ValidationOutput {
@@ -180,12 +191,12 @@ $checkforResourceGroup = Get-AzureRmResourceGroup | Where ResourceGroupName -Lik
 # just put the resources in that rg, otherwise it will create a new rg
 if($checkforResourceGroup -eq $null)
 {
-    Write-Output '', "Resource group '$resourceGroupName' does not exist."
-    exit
+    #Write-Output '', "Resource group '$resourceGroupName' does not exist."
+    #exit
 
-    ###Write-Host "Resource group '$resourceGroupName' does not exist. Creating a new resource group.";
-    ###Write-Host "Creating resource group '$resourceGroupName' in location '$location'";
-    ###New-AzureRmResourceGroup -Name $resourceGroupName -Location $location -Force
+    Write-Host "Resource group '$resourceGroupName' does not exist. Creating a new resource group.";
+    Write-Host "Creating resource group '$resourceGroupName' in location '$location'";
+    New-AzureRmResourceGroup -Name $resourceGroupName -Location $location -Force
 }
 
 # If you are just validating your ARM template
@@ -196,6 +207,7 @@ if ($ValidateOnly)
                                        -TemplateParameterObject $paramObject)
     if ($ErrorMessages) {
         Write-Output '', 'Validation returned the following errors:', @($ErrorMessages), '', 'Template is invalid.'
+        Exit
     }
     else {
         Write-Output '', 'Template is valid.'
@@ -223,7 +235,6 @@ else
         #This env variable is used so the app can access key vault secrets
         $kvEndpoint = "https://" + $kvName + ".vault.azure.net/"
         [System.Environment]::SetEnvironmentVariable('KEYVAULT_ENDPOINT_MEMORY_LANE',$kvEndpoint,[System.EnvironmentVariableTarget]::Machine)
-        [System.Environment]::SetEnvironmentVariable('KEYVAULT_ENDPOINT_' + $appName,$kvEndpoint,[System.EnvironmentVariableTarget]::Machine)
     }
    
    # Deploy using the ARM template
@@ -238,6 +249,7 @@ else
 
     if ($ErrorMessages) {
         Write-Output '', 'Template deployment returned the following errors:', @(@($ErrorMessages) | ForEach-Object { $_.Exception.Message.TrimEnd("`r`n") })
+        Exit
    }
 
    # Call the PS script that scrapes the Azure resources information, puts secrets in key vault and writes to the app user secrets

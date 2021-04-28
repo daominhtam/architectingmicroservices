@@ -24,6 +24,10 @@ namespace Catalog.API.Infrastructure.Repository
         {
             // Group the order details by album and return the albums with the highest count
 
+            // Fix for race conditions where music is created with higher id values
+            // Select MIN(id) from products as lowestId
+            var lowestId = Get().Min(x => x.Id);
+
             var topSellers = new List<Product>();
             var rnd = new Random();
             var productCount = Get().Count() + 5;
@@ -33,7 +37,7 @@ namespace Catalog.API.Infrastructure.Repository
                 var item = rnd.Next(productCount);
 
                 var selecteditem = Get()
-                    .Where(x => x.Id == item)
+                    .Where(x => x.Id == (item + lowestId))
                     .AsNoTracking() // Disable change tracking
                     .FirstOrDefault();
 

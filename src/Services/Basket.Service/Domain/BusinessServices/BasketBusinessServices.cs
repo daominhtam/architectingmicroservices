@@ -45,7 +45,6 @@ namespace Basket.API.Domain.BusinessServices
             _eventBusSubscriber = eventBusSubscriber;
             _restClient = restClient;
             _telemetryClient = telemetryClient;
-            //_eventBus = eventBus;
         }
 
         /// <summary>
@@ -86,19 +85,26 @@ namespace Basket.API.Domain.BusinessServices
             //* Returns a ProductTableEntity class
             var productTableEntity = await _productRepository.GetItem(ProductPartitionKey, productId.ToString(), correlationToken);
 
+            // Fallback logic
             if (productTableEntity == null)
             {
-                // Make direct HTTP call to retrieve product information from Catalog Service
+                // Fallback:
+                // If product not available from local read store, fetch it from catalog service by
+                // making direct HTTP call to Catalog Service.
                 var product = await _restClient.GetAsync<ProductEntity>(ServiceEnum.Catalog, $"api/Catalog/Music/{productId}", correlationToken);
 
                 if (product == null)
                     throw new Exception(
                         $"Cannot add item to shopping basket: ProductEntity #{productId} does not exist for Request {correlationToken}.  Have you created the ProductEntity Read Model for the Shopping BasketEntity microservice?");
 
+                // Transform product into an entity class for table storage
                 productTableEntity = new ProductTableEntity
                 {
+                    // parition key is constant
                     PartitionKey = ProductPartitionKey,
+                    // row key is productId
                     RowKey = product.Data.Id.ToString(),
+                    
                     Title = product.Data.Title,
                     Id = product.Data.Id,
                     GenreName = product.Data.GenreName,
@@ -106,7 +112,7 @@ namespace Basket.API.Domain.BusinessServices
                     Price = product.Data.Price.ToString()
                 };
 
-                // Store product entity in the local read model 
+                // Add product entity tolocal read store, implementing a cache-aside pattern
                 await _productRepository.Insert(productTableEntity, correlationToken);
 
                 _logger.LogInformation(

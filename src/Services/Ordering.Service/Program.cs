@@ -16,7 +16,7 @@ namespace Ordering.API
     {
         // Gets the root Azure Key Vault endpoint from a machine level environment variable
         // that is populated in the DeployToAzure.ps1 script
-        private static string GetKeyVaultEndpoint() => Environment.GetEnvironmentVariable("KEYVAULT_ENDPOINT_vet421", EnvironmentVariableTarget.Machine);
+        private static string GetKeyVaultEndpoint() => Environment.GetEnvironmentVariable("KEYVAULT_ENDPOINT_MEMORY_LANE", EnvironmentVariableTarget.Machine);
 
         public static void Main(string[] args)
         {

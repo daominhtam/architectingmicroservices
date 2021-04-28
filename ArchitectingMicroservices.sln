@@ -53,6 +53,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Utilities", "src\BuildingBl
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "provisioning", "provisioning", "{87F91000-F71C-4F78-A04B-1D3E04AE801A}"
 	ProjectSection(SolutionItems) = preProject
+		provisioning\deploymentInfo.json = provisioning\deploymentInfo.json
 		provisioning\DeployToAzure.ps1 = provisioning\DeployToAzure.ps1
 		..\..\..\..\Users\robvet.NORTHAMERICA\Downloads\microservices (1).json = ..\..\..\..\Users\robvet.NORTHAMERICA\Downloads\microservices (1).json
 		provisioning\microservices.json = provisioning\microservices.json
@@ -158,6 +159,12 @@ Global
 		{17158B30-8D05-482F-9AF7-AD7131A86AFE}.FullApp|Any CPU.Build.0 = Debug|Any CPU
 		{17158B30-8D05-482F-9AF7-AD7131A86AFE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{17158B30-8D05-482F-9AF7-AD7131A86AFE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{29A9F30E-7C75-493C-BDBC-35A385E3E20C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29A9F30E-7C75-493C-BDBC-35A385E3E20C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29A9F30E-7C75-493C-BDBC-35A385E3E20C}.FullApp|Any CPU.ActiveCfg = Release|Any CPU
+		{29A9F30E-7C75-493C-BDBC-35A385E3E20C}.FullApp|Any CPU.Build.0 = Release|Any CPU
+		{29A9F30E-7C75-493C-BDBC-35A385E3E20C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29A9F30E-7C75-493C-BDBC-35A385E3E20C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

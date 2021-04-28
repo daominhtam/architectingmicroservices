@@ -115,16 +115,26 @@ $WriteSecretsToUserSecrets= "true"
 # using az commands
 if ([string]::IsNullOrEmpty($(Get-AzureRmContext).Account)) 
 {
-    Login-AzureRmAccount 
-    #If more than one under your account
-    Select-AzureRmSubscription -SubscriptionId $subscriptionId
-    #Verify Current Subscription
-    Get-AzureRmSubscription –SubscriptionId $subscriptionId
-    $VerbosePreference = "SilentlyContinue"
+    try  
+    {
+        Login-AzureRmAccount 
+        #If more than one under your account
+        Select-AzureRmSubscription -SubscriptionId $subscriptionId
+        #Verify Current Subscription
+        Get-AzureRmSubscription –SubscriptionId $subscriptionId
+        $VerbosePreference = "SilentlyContinue"
 
-    # Do an az login since we are also using az commands
-    az login
-    az account set --subscription $subscriptionId
+        # Do an az login since we are also using az commands
+        az login
+        az account set --subscription $subscriptionId
+     }
+     catch 
+     {
+        write-host "Exception capturing Authenticating to Azure:" -ForegroundColor Red
+        write-host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
+        write-host "Exception Message: $($_.Exception.Message)" -ForegroundColor Red
+        Exit
+     }
 }
 
 #Helpers
@@ -243,6 +253,7 @@ catch
         write-host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
         write-host "Exception Message: $($_.Exception.Message)" -ForegroundColor Red
         Write-Host "Error with $storageAccount" -ForegroundColor Red
+        Exit
     }
 
 #Add-Content -Path $File  " " 
@@ -355,6 +366,7 @@ catch
     write-host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
     write-host "Exception Message: $($_.Exception.Message)" -ForegroundColor Red
     Write-Host "Error with $storageAccountKey" -ForegroundColor Red
+    Exit
 }
 
 if ($WriteToScreen -eq "True") 
@@ -405,9 +417,9 @@ try
     # Add database credentials for troubleshooting
     dotnet user-secrets set "Catalog Sql Database Server Name" $ServerName --project $finalDirectory
 
-
     #Add-Content -Path $File  "Sql Database Login = $userId,"
     dotnet user-secrets set "Catalog Sql Database Login" $userId --project $finalDirectory
+    dotnet user-secrets set "catalogsqldbpwsecret" $password --project $finalDirectory
 
     Add-Content -Path $File  $concatenatedCatalogString 
 
@@ -418,6 +430,7 @@ catch
     write-host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
     write-host "Exception Message: $($_.Exception.Message)" -ForegroundColor Red
     Write-Host "Error with $storageAccountKey" -ForegroundColor Red
+    Exit
 }
 
 if ($WriteToScreen -eq "True") 
@@ -544,6 +557,7 @@ catch
     write-host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
     write-host "Exception Message: $($_.Exception.Message)" -ForegroundColor Red
     Write-Host "Error with $topicString" -ForegroundColor Red
+    Exit
 }
 
 
@@ -584,6 +598,7 @@ catch
     write-host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
     write-host "Exception Message: $($_.Exception.Message)" -ForegroundColor Red
     Write-Host "Error with $topicString" -ForegroundColor Red
+    Exit
 }
 
 #Add-Content -Path $File  " " 
@@ -637,6 +652,7 @@ catch
     write-host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
     write-host "Exception Message: $($_.Exception.Message)" -ForegroundColor Red
     Write-Host "Error with $cosmosUri" -ForegroundColor Red
+    Exit
 }
 #Add-Content -Path $File  " " 
 
@@ -685,6 +701,7 @@ catch
     write-host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
     write-host "Exception Message: $($_.Exception.Message)" -ForegroundColor Red
     Write-Host "Error with $cosmosKey" -ForegroundColor Red
+    Exit
 }
 
 
@@ -737,7 +754,7 @@ catch
     write-host "Exception capturing AI instrumentation key:" -ForegroundColor Red
     write-host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
     write-host "Exception Message: $($_.Exception.Message)" -ForegroundColor Red
-
+    Exit
 }
 
 #Get ACR Resgisty Name

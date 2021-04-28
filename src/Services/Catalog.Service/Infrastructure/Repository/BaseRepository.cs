@@ -130,7 +130,7 @@ namespace Catalog.API.Infrastructure.Repository
         {
             return _ctx.Set<T>().Where(predicate).AsQueryable();
         }
-
+             
         /// <summary>
         ///     Leverages Entity Framework's Find method.
         ///     Find will first attempt to find given domain class
