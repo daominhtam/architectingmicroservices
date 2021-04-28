@@ -806,10 +806,6 @@ Add-Content -Path $File  '}'
 Write-Host  
 Write-Host "**********************************************************************************************" 
 Write-Host "Done processing " 
-Write-Host "Here are your secrets..." 
-Write-Host  
-#dotnet user-secrets list --project $finalDirectory
-Write-Host  
 Write-Host "**********************************************************************************************" 
 Write-Host  "Important Note:" 
 Write-Host  "We have also written a backup in c:\microservices_workshop\usersecrets.txt" 
